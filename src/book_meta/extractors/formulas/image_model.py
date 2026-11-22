@@ -1,12 +1,3 @@
-"""Шаг 4 каскада формул: PDF -> регионы -> кропы -> модель -> LaTeX -> эвристики.
-
-Здесь только «модельная» часть. Остальное - TODO, делается в cascade.py / numbering.py:
-  * превращение `FormulaCandidate` в `Formula` (models/formula.py: Location, Provenance, id, source=IMAGE_MODEL);
-  * номер формулы: регионы `formula_number` (их отдаёт layout) + поиск спанов справа;
-  * название и контекст формулы (titles.py);
-  * MathML / TeX-аннотация и сверка с ними (шаги 1–2 каскада, EPUB);
-  * валидация LaTeX через pylatexenc и `needs_review` -> review.md.
-"""
 from __future__ import annotations
 
 import io
@@ -32,20 +23,20 @@ log = logging.getLogger(__name__)
 @dataclass
 class FormulaCandidate:
     page_index: int
-    bbox: Rect                       # нормированный bbox региона (без полей кропа)
-    latex: str                       # после правил
-    raw_latex: str                   # как выдала модель
-    confidence: float                # оценка по проверкам (модель своей не даёт)
+    bbox: Rect
+    latex: str
+    raw_latex: str
+    confidence: float
     layout_confidence: float
-    issues: list[str]                # что не понравилось проверкам; непусто => на ревью
-    hits: list[RuleHit]              # сработавшие правила над LaTeX
+    issues: list[str]
+    hits: list[RuleHit]
     png: bytes = field(repr=False, default=b"")
 
 
 @dataclass
 class ModelRun:
     formulas: list[FormulaCandidate]
-    region_hits: dict[int, list[RuleHit]]  # страница -> сработавшие правила над регионами (там же, что и кого убрали)
+    region_hits: dict[int, list[RuleHit]]
 
 
 def crop_png(img: Image.Image, rect: Rect, pad_px: int) -> tuple[bytes, tuple[int, int]] | None:
@@ -74,7 +65,6 @@ def recognize_formulas(
     pages: Iterable[int] | None = None,
     progress: Callable[[int, int], None] | None = None,
 ) -> ModelRun:
-    """Выключные формулы PDF -> LaTeX. `include_inline=True` отключает правило drop_inline_formulas."""
     s = settings or PaddleSettings()
     if rules is None:
         rules = default_rules(disabled=["drop_inline_formulas"] if include_inline else [])
