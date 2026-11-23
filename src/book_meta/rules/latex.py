@@ -7,8 +7,9 @@ from __future__ import annotations
 import re
 
 from book_meta.rules.base import LatexContext, latex_check, latex_rule
+from book_meta.extractors.формулы.numbering import extract_tag_from_latex
 
-MAX_LEN = 1200            # длиннее - почти наверняка зацикливание декодера
+MAX_LEN = 1200         # длиннее - почти наверняка зацикливание декодера
 CHECK_PENALTY = 0.35      # снижение confidence за каждую найденную проблему
 
 _DELIMS = (("$$", "$$"), ("\\[", "\\]"), ("\\(", "\\)"), ("$", "$"))
@@ -35,11 +36,11 @@ def strip_math_delimiters(latex: str, ctx: LatexContext) -> str:
 
 @latex_rule("strip_tag", order=20)
 def strip_tag(latex: str, ctx: LatexContext) -> str:
-    """Номер формулы не должен оставаться в LaTeX (design §3.3).
-
-    TODO: вместо удаления сохранять номер в Formula.number (formulas/numbering.py).
-    """
-    return _TAG.sub("", latex)
+    latex_clean, number = extract_tag_from_latex(latex)
+    if number:
+        ctx.formula_number = number
+        ctx.formula_number_raw = number
+    return latex_clean
 
 
 @latex_rule("collapse_whitespace", order=90)
@@ -89,7 +90,6 @@ def check_long(latex: str, ctx: LatexContext) -> str | None:
 
 
 def confidence_from_issues(issues: list[str]) -> float:
-    """Оценка 0..1 вместо уверенности модели, которой у PP-FormulaNet нет."""
     if any(i.startswith("empty:") for i in issues):
         return 0.0
     return max(0.0, 1.0 - CHECK_PENALTY * len(issues))
