@@ -3,7 +3,7 @@ from typing import Optional
 
 def extract_latex_from_mathml(block_raw: dict) -> Optional[str]:
     """
-    Извлекает готовый LaTeX из MathML, который лежит в block.raw["mathml"].
+    Извлекает готовый LaTeX из MathML.
     Если MathML нет или в нем нет аннотации — возвращает None.
     """
     mathml = block_raw.get("mathml")
